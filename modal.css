@@ -1,0 +1,136 @@
+.modal-overlay{
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0,0,0,0.55);
+    opacity: 0;
+    visibility: hidden;
+    z-index: 99999;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.modal-overlay.show{
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-box{
+    width: min(520px, 90%);
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    transform: scale(0.7);
+    opacity: 0;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.modal-overlay.show .modal-box{
+    transform: scale(1);
+    opacity: 1;
+}
+
+.modal-overlay.closing .modal-box{
+    transform: scale(0.7);
+    opacity: 0;
+}
+
+.modal-box h2{
+    font-size: 22px;
+    font-weight: 800;
+    text-align: center;
+    color: var(--green);
+}
+
+.modal-box input,
+.modal-box textarea{
+    width: 100%;
+    border: 1px solid #DDDDDD;
+    border-radius: 8px;
+    outline: none;
+    padding: 12px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.modal-box textarea{
+    height: 100px;
+    resize: none;
+}
+
+.modal-actions{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.cancel-btn,
+.submit-btn{
+    flex: 1;
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cancel-btn{
+    background: #E74C3C;
+    color: #FFFFFF;
+}
+
+.submit-btn{
+    background: var(--green);
+    color: #FFFFFF;
+}
+
+.no-scroll{
+    overflow: hidden;
+}
+
+@media (max-width: 768px){
+
+    .modal-box{
+        padding: 20px;
+        gap: 12px;
+    }
+
+    .modal-box h2{
+        font-size: 20px;
+    }
+
+    .modal-actions{
+        flex-direction: column;
+    }
+
+    .cancel-btn,
+    .submit-btn{
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px){
+
+    .modal-overlay{
+        padding: 16px;
+    }
+
+    .modal-box{
+        width: 100%;
+        padding: 18px;
+        border-radius: 10px;
+    }
+
+    .modal-box input,
+    .modal-box textarea{
+        padding: 10px;
+        font-size: 13px;
+    }
+}
