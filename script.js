@@ -71,6 +71,36 @@ function createCard(item) {
         </div>`;
 }
 
+function createPopularCard(item) {
+    return `
+        <div class="popular-card">
+            ${item.discount ? `<div class="popular-card-badge">${item.discount}</div>` : ""}
+            <img class="popular-card-img" src="${item.img}" alt="${item.title}">
+            <div class="popular-card-body">
+                <div class="popular-card-content">
+                    <div class="popular-card-row-1">
+                        <span>${item.title}</span>
+                        <span>${item.price}</span>
+                    </div> 
+                    <div class="popular-card-row-2">
+                        <div class="popular-rating-price">
+                            <div class="popular-rating">★ ${item.rating}</div>
+                            <div class="popular-time">${item.time}</div>
+                        </div>
+                        <div class="popular-add-wrapper" data-id="${item.title}">
+                            <div class="popular-add-btn">+</div>
+                            <div class="popular-counter hidden">
+                                <button class="popular-minus" type="button">-</button>
+                                <div class="popular-count">0</div>
+                                <button class="popular-plus" type="button">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+}
+
 function renderCards() {
     foodGrid.innerHTML = "";
     const perRow = getCardsPerRow();
@@ -91,18 +121,34 @@ const rightBtn = document.querySelector(".slider-btn.right");
 let currentIndex = 0;
 let isAnimating = false;
 let autoSlide = null;
+let popularTrack = null;
 
 function getVisibleCards() {
-    return window.innerWidth <= 950 ? 1 : 3;
+    if (window.innerWidth <= 1100) return 1;
+    return 3;
 }
 
 function getCardWidth() {
-    const card = popularGrid.querySelector(".card");
-    return card ? card.offsetWidth + 24 : 0;
+    const card = popularTrack?.querySelector(".popular-card");
+    if (!card) return 0;
+    const styles = window.getComputedStyle(popularTrack);
+    const gap = parseFloat(styles.columnGap || styles.gap) || 0;
+    return card.offsetWidth + gap;
+}
+
+function getCarouselPeekOffset() {
+    if (!popularGrid || window.innerWidth <= 600) return 0;
+    const step = getCardWidth();
+    const card = popularTrack?.querySelector(".popular-card");
+    if (!card || !step) return 0;
+    const gap = step - card.offsetWidth;
+    const fullCardsWidth = (getVisibleCards() * card.offsetWidth) + ((getVisibleCards() - 1) * gap);
+    return Math.max(0, (popularGrid.clientWidth - fullCardsWidth) / 2);
 }
 
 function renderPopularCards() {
-    popularGrid.innerHTML = "";
+    popularGrid.innerHTML = `<div class="popular-track"></div>`;
+    popularTrack = popularGrid.querySelector(".popular-track");
 
     const visible = getVisibleCards();
     const startClones = popularItems.slice(-visible);
@@ -111,26 +157,27 @@ function renderPopularCards() {
     const all = [...startClones, ...popularItems, ...endClones];
 
     all.forEach(item => {
-        popularGrid.innerHTML += createCard(item);
-        console.log("Rendering:", item.img);
+        popularTrack.innerHTML += createPopularCard(item);
     });
 
     currentIndex = visible;
 
-    popularGrid.style.transition = "none";
+    popularTrack.style.transition = "none";
     updateCarousel();
-    popularGrid.offsetHeight;
-    popularGrid.style.transition = "transform 0.6s ease";
+    popularTrack.offsetHeight;
+    popularTrack.style.transition = "transform 0.6s ease";
 }
 
 function updateCarousel() {
-    const offset = currentIndex * getCardWidth();
-    popularGrid.style.transform = `translateX(-${offset}px)`;
+    const offset = (currentIndex * getCardWidth()) - getCarouselPeekOffset();
+    if (popularTrack) {
+        popularTrack.style.transform = `translateX(-${offset}px)`;
+    }
     updateCenterCard();
 }
 
 function updateCenterCard() {
-    const cards = popularGrid.querySelectorAll(".card");
+    const cards = popularTrack?.querySelectorAll(".popular-card") || [];
 
     cards.forEach(card => card.classList.remove("is-active"));
 
@@ -159,11 +206,11 @@ function next(isAuto = false) {
 
     setTimeout(() => {
         if (currentIndex >= popularItems.length + visible) {
-            popularGrid.style.transition = "none";
+            popularTrack.style.transition = "none";
             currentIndex = visible;
             updateCarousel();
-            popularGrid.offsetHeight;
-            popularGrid.style.transition = "transform 0.6s ease";
+            popularTrack.offsetHeight;
+            popularTrack.style.transition = "transform 0.6s ease";
         }
         isAnimating = false;
     }, 600);
@@ -181,11 +228,11 @@ function prev() {
 
     setTimeout(() => {
         if (currentIndex < visible) {
-            popularGrid.style.transition = "none";
+            popularTrack.style.transition = "none";
             currentIndex = popularItems.length + visible - 1;
             updateCarousel();
-            popularGrid.offsetHeight;
-            popularGrid.style.transition = "transform 0.6s ease";
+            popularTrack.offsetHeight;
+            popularTrack.style.transition = "transform 0.6s ease";
         }
         isAnimating = false;
     }, 600);
@@ -239,12 +286,52 @@ document.addEventListener("click", (e) => {
     updateCartUI(wrapper, key);
 });
 
+document.addEventListener("click", (e) => {
+    const addBtn = e.target.closest(".popular-add-btn");
+    const plus = e.target.closest(".popular-plus");
+    const minus = e.target.closest(".popular-minus");
+
+    if (!addBtn && !plus && !minus) return;
+
+    const wrapper = e.target.closest(".popular-add-wrapper");
+    const key = wrapper?.dataset.id;
+
+    if (!key) return;
+
+    if (cartState[key] === undefined) cartState[key] = 0;
+
+    if (addBtn) cartState[key] = 1;
+    if (plus) cartState[key]++;
+    if (minus && cartState[key] > 0) cartState[key]--;
+
+    updatePopularCartUI(wrapper, key);
+});
+
 function updateCartUI(wrapper, key) {
     const count = cartState[key];
 
     const addBtn = wrapper.querySelector(".add-btn");
     const counter = wrapper.querySelector(".counter");
     const countEl = wrapper.querySelector(".count");
+
+    if (count <= 0) {
+        cartState[key] = 0;
+        addBtn.classList.remove("hidden");
+        counter.classList.add("hidden");
+        countEl.textContent = 0;
+    } else {
+        addBtn.classList.add("hidden");
+        counter.classList.remove("hidden");
+        countEl.textContent = count;
+    }
+}
+
+function updatePopularCartUI(wrapper, key) {
+    const count = cartState[key];
+
+    const addBtn = wrapper.querySelector(".popular-add-btn");
+    const counter = wrapper.querySelector(".popular-counter");
+    const countEl = wrapper.querySelector(".popular-count");
 
     if (count <= 0) {
         cartState[key] = 0;
