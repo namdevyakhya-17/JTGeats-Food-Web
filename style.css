@@ -61,7 +61,6 @@ textarea {
 
 .logo {
     color: var(--light);
-    font-family: Squada One;
     font-size: 24px;
     font-weight: 700;
     line-height: 24px;
@@ -506,6 +505,7 @@ textarea {
 .popular-title{
     width: 427px;
     height: 36px;
+    font-family: "Roboto", sans-serif;
     font-weight: 800;
     font-style: normal;
     font-size: 40px;
@@ -927,13 +927,12 @@ textarea {
     margin-bottom: 20px;
 }
 
-.contact-header h6{
+.contact-header h2{
     width: 286px;
     height: 48px;
-    font-family: Roboto;
+    font-family: Roboto, sans-serif;
     font-size: 24px;
     line-height: 24px;
-    letter-spacing: -1.2%;
     font-weight: 400;
 }
 
@@ -1174,6 +1173,7 @@ textarea {
 }
 
 @media (min-width: 951px) and (max-width: 1080px) {
+
     .popular-grid{
         width: min(578px, 100%);
         max-width: 100%;
@@ -1213,6 +1213,20 @@ textarea {
         justify-content: center;
         gap: 18px;
     }
+
+    /* .popular-items{
+        gap: 35px;
+    }
+
+    .popular-title{
+        width: 100%;
+        font-size: 32px;
+    }
+
+    .popular-viewport{
+        width: 280px;
+    } */
+
     .popular-items{
         height: auto;
     }
@@ -1533,6 +1547,14 @@ textarea {
         flex: 0 0 90%;
     }
 
+    /* .popular-items{
+        margin-top: 80px;
+    }
+
+    .popular-title{
+        font-size: 28px;
+    } */
+
     .popular-slider{
         padding-inline: 56px;
     }
@@ -1559,7 +1581,7 @@ textarea {
     .slider-btn.right::before {
         border-top: 12px solid transparent;
         border-bottom: 12px solid transparent;
-        border-left: 16px solid var(--green);
+        border-left: 16px solid #FFFFFF;
     }
 
     .slider-btn.left::before {
