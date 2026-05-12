@@ -25,6 +25,7 @@ const popularItems = [
 
 const sidebarIcon = document.querySelector(".sidebar-icon");
 const navMenu = document.querySelector(".nav-menu");
+
 if (sidebarIcon && navMenu) {
     sidebarIcon.addEventListener("click", () => {
         navMenu.classList.toggle("active");
@@ -33,7 +34,7 @@ if (sidebarIcon && navMenu) {
 }
 
 const foodGrid = document.querySelector(".kitchen-grid");
-const popularGrid = $(".popular-grid");
+
 function getCardsPerRow() {
     if (window.innerWidth <= 900) return 2;
     if (window.innerWidth <= 1200) return 3;
@@ -44,7 +45,7 @@ function createCard(item) {
     return `
         <div class="card">
             ${item.discount ? `<div class="card-badge">${item.discount}</div>` : ""}
-            <img src="${item.img}" alt="${item.title}" />
+            <img src="${item.img}" />
             <div class="card-body">
                 <div class="card-content">
                     <div class="card-row-1">
@@ -58,7 +59,6 @@ function createCard(item) {
                         </div>
                         <div class="add-wrapper" data-id="${item.title}">
                             <div class="add-btn">+</div>
-
                             <div class="counter hidden">
                                 <button class="minus">-</button>
                                 <div class="count">0</div>
@@ -74,6 +74,7 @@ function createCard(item) {
 function renderCards() {
     foodGrid.innerHTML = "";
     const perRow = getCardsPerRow();
+
     for (let i = 0; i < foodItems.length; i += perRow) {
         const rowItems = foodItems.slice(i, i + perRow);
         foodGrid.innerHTML += `
@@ -83,168 +84,202 @@ function renderCards() {
     }
 }
 
+const popularGrid = document.querySelector(".popular-grid");
+const leftBtn = document.querySelector(".slider-btn.left");
+const rightBtn = document.querySelector(".slider-btn.right");
+
+let currentIndex = 0;
+let isAnimating = false;
+let autoSlide = null;
+
+function getVisibleCards() {
+    return window.innerWidth <= 950 ? 1 : 3;
+}
+
+function getCardWidth() {
+    const card = popularGrid.querySelector(".card");
+    return card ? card.offsetWidth + 24 : 0;
+}
+
 function renderPopularCards() {
-    popularItems.forEach(item => {
-        popularGrid.append(`
-            <div class="card-wrapper">
-                ${createCard(item)}
-            </div>
-        `);
-    });
-    initCarousel();
-}
+    popularGrid.innerHTML = "";
 
-function initCarousel() {
-    popularGrid.slick({
-        infinite: true,
-        slidesToShow: 3,
-        slidesToScroll: 1,
-        centerMode: true,
-        centerPadding: "0px",
-        autoplay: true,
-        autoplaySpeed: 3000,
-        pauseOnHover: true,
-        arrows: true,
-        speed: 600,
-        prevArrow: $(".slider-btn.left"),
-        nextArrow: $(".slider-btn.right"),
-        responsive: [
-            {
-                breakpoint: 1200,
-                settings: {
-                    slidesToShow: 3,
-                    centerMode: true,
-                    centerPadding: "0px"
-                }
-            },
-            {
-                breakpoint: 950,
-                settings: {
-                    slidesToShow: 1,
-                    centerMode: true,
-                    centerPadding: "120px"
-                }
-            },
-            {
-                breakpoint: 768,
-                settings: {
-                    slidesToShow: 1,
-                    centerMode: true,
-                    centerPadding: "80px"
-                }
-            },
-            {
-                breakpoint: 600,
-                settings: {
-                    slidesToShow: 1,
-                    centerMode: true,
-                    centerPadding: "40px"
-                }
-            }
-        ]
+    const visible = getVisibleCards();
+    const startClones = popularItems.slice(-visible);
+    const endClones = popularItems.slice(0, visible);
+
+    const all = [...startClones, ...popularItems, ...endClones];
+
+    all.forEach(item => {
+        popularGrid.innerHTML += createCard(item);
+        console.log("Rendering:", item.img);
     });
 
-    setTimeout(initCart, 300);
+    currentIndex = visible;
+
+    popularGrid.style.transition = "none";
+    updateCarousel();
+    popularGrid.offsetHeight;
+    popularGrid.style.transition = "transform 0.6s ease";
 }
+
+function updateCarousel() {
+    const offset = currentIndex * getCardWidth();
+    popularGrid.style.transform = `translateX(-${offset}px)`;
+    updateCenterCard();
+}
+
+function updateCenterCard() {
+    const cards = popularGrid.querySelectorAll(".card");
+
+    cards.forEach(card => card.classList.remove("is-active"));
+
+    const center = currentIndex + Math.floor(getVisibleCards() / 2);
+
+    if (cards[center]) {
+        cards[center].classList.add("is-active");
+    }
+}
+
+function animate(btn) {
+    btn.classList.add("active");
+    setTimeout(() => btn.classList.remove("active"), 200);
+}
+
+function next(isAuto = false) {
+    if (isAnimating) return;
+    isAnimating = true;
+
+    currentIndex++;
+    updateCarousel();
+
+    if (!isAuto) animate(rightBtn);
+
+    const visible = getVisibleCards();
+
+    setTimeout(() => {
+        if (currentIndex >= popularItems.length + visible) {
+            popularGrid.style.transition = "none";
+            currentIndex = visible;
+            updateCarousel();
+            popularGrid.offsetHeight;
+            popularGrid.style.transition = "transform 0.6s ease";
+        }
+        isAnimating = false;
+    }, 600);
+}
+
+function prev() {
+    if (isAnimating) return;
+    isAnimating = true;
+
+    currentIndex--;
+    updateCarousel();
+    animate(leftBtn);
+
+    const visible = getVisibleCards();
+
+    setTimeout(() => {
+        if (currentIndex < visible) {
+            popularGrid.style.transition = "none";
+            currentIndex = popularItems.length + visible - 1;
+            updateCarousel();
+            popularGrid.offsetHeight;
+            popularGrid.style.transition = "transform 0.6s ease";
+        }
+        isAnimating = false;
+    }, 600);
+}
+
+function startAuto() {
+    stopAuto();
+    autoSlide = setInterval(() => {
+        if (!isAnimating) next(true);
+    }, 3000);
+}
+
+function stopAuto() {
+    clearInterval(autoSlide);
+}
+
+rightBtn?.addEventListener("click", () => next(false));
+leftBtn?.addEventListener("click", prev);
+
+window.addEventListener("resize", () => {
+    stopAuto();
+    renderCards();
+    renderPopularCards();
+    startAuto();
+});
 
 renderCards();
 renderPopularCards();
-
-let resizeTimeout;
-window.addEventListener("resize", () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
-        renderCards();
-    }, 150);
-});
+startAuto();
 
 const cartState = {};
-function initCart() {
-    $(".add-wrapper").each(function () {
-        const key = $(this).data("id");
-        if (cartState[key] === undefined) {
-            cartState[key] = 0;
-        }
-        updateUI($(this), key);
-    });
-}
 
-function updateUI(element, key) {
+document.addEventListener("click", (e) => {
+    const addBtn = e.target.closest(".add-btn");
+    const plus = e.target.closest(".plus");
+    const minus = e.target.closest(".minus");
+
+    if (!addBtn && !plus && !minus) return;
+
+    const wrapper = e.target.closest(".add-wrapper");
+    const key = wrapper?.dataset.id;
+
+    if (!key) return;
+
+    if (cartState[key] === undefined) cartState[key] = 0;
+
+    if (addBtn) cartState[key] = 1;
+    if (plus) cartState[key]++;
+    if (minus && cartState[key] > 0) cartState[key]--;
+
+    updateCartUI(wrapper, key);
+});
+
+function updateCartUI(wrapper, key) {
     const count = cartState[key];
-    const addBtn = element.find(".add-btn");
-    const counter = element.find(".counter");
-    const countElement = element.find(".count");
+
+    const addBtn = wrapper.querySelector(".add-btn");
+    const counter = wrapper.querySelector(".counter");
+    const countEl = wrapper.querySelector(".count");
 
     if (count <= 0) {
         cartState[key] = 0;
-        addBtn.show();
-        counter.addClass("hidden");
-    }
-
-    else {
-        addBtn.hide();
-        counter.removeClass("hidden");
-        countElement.text(count);
+        addBtn.classList.remove("hidden");
+        counter.classList.add("hidden");
+        countEl.textContent = 0;
+    } else {
+        addBtn.classList.add("hidden");
+        counter.classList.remove("hidden");
+        countEl.textContent = count;
     }
 }
-
-$(document).on("click", ".add-btn", function (event) {
-    event.preventDefault();
-    const wrapper = $(this).closest(".add-wrapper");
-    const key = wrapper.data("id");
-    cartState[key] = 1;
-    updateUI(wrapper, key);
-});
-
-$(document).on("click", ".plus", function (event) {
-    event.preventDefault();
-    const wrapper = $(this).closest(".add-wrapper");
-    const key = wrapper.data("id");
-    cartState[key]++;
-    updateUI(wrapper, key);
-});
-
-$(document).on("click", ".minus", function (event) {
-    event.preventDefault();
-    const wrapper = $(this).closest(".add-wrapper");
-    const key = wrapper.data("id");
-    if (cartState[key] > 0) {
-        cartState[key]--;
-    }
-    updateUI(wrapper, key);
-});
 
 const video = document.getElementById("mainVideo");
 const playBtn = document.getElementById("playBtn");
 const videoWrapper = document.querySelector(".video-wrapper");
+
 function toggleVideo() {
+    if (!video) return;
+
     if (video.paused) {
         video.play();
         videoWrapper.classList.add("playing");
-    }else {
+    } else {
         video.pause();
         videoWrapper.classList.remove("playing");
     }
 }
 
-video.addEventListener("click", toggleVideo);
-playBtn.addEventListener("click", toggleVideo);
-video.addEventListener("ended", () => {
-    videoWrapper.classList.remove("playing");
-});
-
-const contactForm = document.querySelector(".contact-form");
-contactForm.addEventListener("submit", function (event) {
-    event.preventDefault();
-    this.reset();
-});
+video?.addEventListener("click", toggleVideo);
+playBtn?.addEventListener("click", toggleVideo);
 
 fetch("modal.html")
-    .then(response => response.text())
-    .then(data => {
-        document.getElementById("modal-root").innerHTML = data;
-        initModal();
-    })
-    .catch(error => {
-        console.error("Failed to load modal:", error);
-    });
+.then(r => r.text())
+.then(d => {
+    document.getElementById("modal-root").innerHTML = d;
+    initModal();
+});
