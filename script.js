@@ -30,7 +30,16 @@ if (sidebarIcon && navMenu) {
     sidebarIcon.addEventListener("click", () => {
         navMenu.classList.toggle("active");
         sidebarIcon.classList.toggle("active");
+        if (navMenu.classList.contains("active")) {
+            document.body.classList.add("no-scroll");
+            document.documentElement.classList.add("no-scroll");
+        } else {
+            document.body.classList.remove("no-scroll");
+            document.documentElement.classList.remove("no-scroll");
+        }
+
     });
+
 }
 
 const foodGrid = document.querySelector(".kitchen-grid");
